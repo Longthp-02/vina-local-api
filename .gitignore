@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.expo/
+.env
+.env.*
+*.log
+.DS_Store
+.vscode/
+.idea/
+coverage/
+apps/api/prisma/dev.db
+apps/api/prisma/dev.db-journal
