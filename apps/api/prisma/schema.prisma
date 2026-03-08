@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum VendorStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Vendor {
+  id            String       @id @default(cuid())
+  submittedByUserId String?
+  name          String
+  slug          String       @unique
+  description   String?
+  latitude      Float
+  longitude     Float
+  addressText   String
+  district      String
+  city          String
+  category      String
+  priceMin      Int?
+  priceMax      Int?
+  openHoursJson Json?
+  status        VendorStatus @default(PENDING)
+  averageRating Float        @default(0)
+  reviewCount   Int          @default(0)
+  aiSummary     String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  reviews       Review[]
+  submittedBy   User?        @relation("SubmittedVendors", fields: [submittedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([city, district])
+  @@index([category])
+  @@index([status])
+  @@index([submittedByUserId])
+}
+
+model Review {
+  id                String       @id @default(cuid())
+  userId            String?
+  vendorId          String
+  rating            Int
+  content           String
+  cleanlinessScore  Int
+  authenticityScore Int
+  valueScore        Int
+  crowdScore        Int
+  status            ReviewStatus @default(PENDING)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  vendor            Vendor       @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  user              User?        @relation("UserReviews", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([vendorId, createdAt])
+  @@index([status])
+  @@index([userId])
+}
+
+model User {
+  id               String      @id @default(cuid())
+  displayName      String
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  reviews          Review[]    @relation("UserReviews")
+  submittedVendors Vendor[]    @relation("SubmittedVendors")
+  authTokens       AuthToken[]
+}
+
+model AuthToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  createdAt DateTime  @default(now())
+  expiresAt DateTime?
+  revokedAt DateTime?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}

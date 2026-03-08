@@ -1,9 +1,14 @@
 {
   "name": "vinal-local",
   "private": true,
-  "packageManager": "pnpm@10",
+  "packageManager": "pnpm@10.17.1",
   "scripts": {
+    "dev": "pnpm -r --parallel --filter mobile --filter api run dev",
     "dev:mobile": "pnpm --filter mobile start",
-    "dev:api": "pnpm --filter api start:dev"
+    "dev:api": "pnpm --filter api start:dev",
+    "build": "pnpm --filter api run build",
+    "lint": "pnpm -r --if-present run lint",
+    "test": "pnpm -r --if-present run test",
+    "typecheck": "pnpm -r --if-present run typecheck"
   }
 }

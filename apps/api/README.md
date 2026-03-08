@@ -1,98 +1,93 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# API Service
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+NestJS API for Vinal Local.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
-
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
+## Setup
 
 ```bash
-$ pnpm install
+pnpm install
+cp apps/api/.env.example apps/api/.env
+pnpm --filter api run prisma:generate
 ```
 
-## Compile and run the project
+## Run (from repo root)
 
 ```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+pnpm --filter api start:dev
 ```
 
-## Run tests
+## Endpoints
+
+- `GET /health`
+- Swagger UI at `GET /docs`
+
+## Environment
+
+- `PORT`: API port (default: `3000`)
+- `DATABASE_URL`: PostgreSQL connection string used by Prisma
+- `ADMIN_API_KEY`: optional key for internal moderation endpoints (`x-admin-key` header)
+- `AUTH_TOKEN_TTL_DAYS`: guest token expiry in days (default: `30`)
+
+## Prisma (PostgreSQL)
+
+This project is set up with Prisma for PostgreSQL foundation only (no business models yet).
+
+Useful commands:
 
 ```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+pnpm --filter api run prisma:generate
+pnpm --filter api run prisma:migrate:dev
+pnpm --filter api run prisma:migrate:deploy
+pnpm --filter api run prisma:seed
+pnpm --filter api run prisma:studio
+pnpm --filter api run moderation -- pending-vendors
+pnpm --filter api run summary:vendor:regenerate -- <vendorId>
 ```
 
-## Deployment
+Initial Vendor migration is generated at:
+- `apps/api/prisma/migrations/20260308111200_init_vendor/migration.sql`
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+To apply migrations locally, make sure PostgreSQL is running and `DATABASE_URL` is correct, then run:
 
 ```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+pnpm --filter api run prisma:migrate:dev
+pnpm --filter api run prisma:seed
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## Vendor AI Summary
 
-## Resources
+- Trigger via API: `POST /vendors/:id/summary/regenerate`
+- Trigger via command:
 
-Check out a few resources that may come in handy when working with NestJS:
+```bash
+pnpm --filter api run summary:vendor:regenerate -- <vendorId>
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## Moderation Endpoints
 
-## Support
+Internal MVP moderation routes:
+- `GET /admin/moderation/vendors/pending`
+- `POST /admin/moderation/vendors/:id/approve`
+- `POST /admin/moderation/vendors/:id/reject`
+- `GET /admin/moderation/reviews/pending`
+- `GET /admin/moderation/reviews/flagged`
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+If `ADMIN_API_KEY` is set, pass it via header:
 
-## Stay in touch
+```bash
+x-admin-key: <ADMIN_API_KEY>
+```
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Operational runbook:
+- `docs/moderation-workflow.md`
 
-## License
+## MVP Auth Foundation
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+- `POST /auth/guest` creates a guest user + access token.
+- For optional authenticated requests, pass:
+
+```text
+Authorization: Bearer <accessToken>
+```
+
+Vendor/review submissions attach `userId` when token is valid, and remain anonymous when no token is provided.
