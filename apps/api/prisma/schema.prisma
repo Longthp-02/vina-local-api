@@ -19,6 +19,11 @@ enum ReviewStatus {
   REJECTED
 }
 
+enum VendorListVisibility {
+  PRIVATE
+  PUBLIC
+}
+
 model Vendor {
   id            String       @id @default(cuid())
   submittedByUserId String?
@@ -41,6 +46,8 @@ model Vendor {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
   reviews       Review[]
+  photos        VendorPhoto[]
+  listItems     VendorListItem[]
   submittedBy   User?        @relation("SubmittedVendors", fields: [submittedByUserId], references: [id], onDelete: SetNull)
 
   @@index([city, district])
@@ -64,20 +71,56 @@ model Review {
   updatedAt         DateTime     @updatedAt
   vendor            Vendor       @relation(fields: [vendorId], references: [id], onDelete: Cascade)
   user              User?        @relation("UserReviews", fields: [userId], references: [id], onDelete: SetNull)
+  photos            ReviewPhoto[]
 
   @@index([vendorId, createdAt])
   @@index([status])
   @@index([userId])
 }
 
+model VendorPhoto {
+  id          String   @id @default(cuid())
+  vendorId    String
+  url         String
+  storagePath String
+  mimeType    String
+  createdAt   DateTime @default(now())
+  vendor      Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([vendorId, createdAt])
+}
+
+model ReviewPhoto {
+  id          String   @id @default(cuid())
+  reviewId    String
+  url         String
+  storagePath String
+  mimeType    String
+  createdAt   DateTime @default(now())
+  review      Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@index([reviewId, createdAt])
+}
+
 model User {
-  id               String      @id @default(cuid())
-  displayName      String
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
-  reviews          Review[]    @relation("UserReviews")
-  submittedVendors Vendor[]    @relation("SubmittedVendors")
-  authTokens       AuthToken[]
+  id                 String              @id @default(cuid())
+  displayName        String
+  phoneNumber        String?             @unique
+  phoneVerifiedAt    DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  reviews            Review[]            @relation("UserReviews")
+  submittedVendors   Vendor[]            @relation("SubmittedVendors")
+  vendorLists        VendorList[]
+  vendorListReports  VendorListReport[]
+  likedVendorLists   VendorListLike[]
+  listComments       VendorListComment[]
+  commentReports     VendorListCommentReport[]
+  followers          UserFollow[]        @relation("FollowedUser")
+  following          UserFollow[]        @relation("FollowerUser")
+  notifications      UserNotification[]
+  authTokens         AuthToken[]
+  phoneVerifications PhoneVerification[]
 }
 
 model AuthToken {
@@ -90,4 +133,148 @@ model AuthToken {
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model PhoneVerification {
+  id          String    @id @default(cuid())
+  userId      String?
+  phoneNumber String
+  codeHash    String
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([phoneNumber, createdAt])
+  @@index([userId])
+}
+
+model VendorList {
+  id          String               @id @default(cuid())
+  userId      String
+  title       String
+  slug        String               @unique
+  description String?
+  visibility  VendorListVisibility @default(PRIVATE)
+  likeCount   Int                  @default(0)
+  viewCount   Int                  @default(0)
+  itemCount   Int                  @default(0)
+  reportCount Int                  @default(0)
+  reportedAt  DateTime?
+  hiddenAt    DateTime?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items       VendorListItem[]
+  likes       VendorListLike[]
+  comments    VendorListComment[]
+  reports     VendorListReport[]
+
+  @@index([userId, updatedAt])
+  @@index([visibility, updatedAt])
+  @@index([reportedAt])
+  @@index([hiddenAt])
+}
+
+model VendorListReport {
+  id        String     @id @default(cuid())
+  listId     String
+  userId     String
+  createdAt  DateTime  @default(now())
+  list       VendorList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, userId])
+  @@index([listId, createdAt])
+  @@index([userId, createdAt])
+}
+
+model VendorListItem {
+  id        String     @id @default(cuid())
+  listId    String
+  vendorId  String
+  position  Int
+  createdAt DateTime   @default(now())
+  list      VendorList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  vendor    Vendor     @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, vendorId])
+  @@unique([listId, position])
+  @@index([vendorId])
+  @@index([listId, createdAt])
+}
+
+model VendorListLike {
+  id        String     @id @default(cuid())
+  listId    String
+  userId    String
+  createdAt DateTime   @default(now())
+  list      VendorList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, userId])
+  @@index([userId])
+  @@index([listId, createdAt])
+}
+
+model VendorListComment {
+  id          String                    @id @default(cuid())
+  listId      String
+  userId      String
+  content     String
+  reportCount Int                       @default(0)
+  reportedAt  DateTime?
+  hiddenAt    DateTime?
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @updatedAt
+  list        VendorList                @relation(fields: [listId], references: [id], onDelete: Cascade)
+  user        User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reports     VendorListCommentReport[]
+
+  @@index([listId, createdAt])
+  @@index([userId, createdAt])
+  @@index([reportedAt])
+  @@index([hiddenAt])
+}
+
+model VendorListCommentReport {
+  id        String            @id @default(cuid())
+  commentId String
+  userId    String
+  createdAt DateTime          @default(now())
+  comment   VendorListComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@index([commentId, createdAt])
+  @@index([userId, createdAt])
+}
+
+model UserFollow {
+  id              String   @id @default(cuid())
+  followerUserId  String
+  followingUserId String
+  createdAt       DateTime @default(now())
+  followerUser    User     @relation("FollowerUser", fields: [followerUserId], references: [id], onDelete: Cascade)
+  followingUser   User     @relation("FollowedUser", fields: [followingUserId], references: [id], onDelete: Cascade)
+
+  @@unique([followerUserId, followingUserId])
+  @@index([followingUserId, createdAt])
+  @@index([followerUserId, createdAt])
+}
+
+model UserNotification {
+  id          String    @id @default(cuid())
+  userId      String
+  actorUserId String?
+  listId      String?
+  type        String
+  title       String
+  body        String
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([readAt])
 }

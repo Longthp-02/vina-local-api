@@ -14,6 +14,22 @@ Minimal pnpm monorepo with:
 pnpm install
 ```
 
+## Database
+
+Recommended local setup uses Docker for PostgreSQL:
+
+```bash
+pnpm db:up
+```
+
+Useful database commands:
+
+```bash
+pnpm db:up
+pnpm db:logs
+pnpm db:down
+```
+
 ## Environment Setup
 
 ```bash
@@ -25,6 +41,22 @@ Set local API base URL in `apps/mobile/.env`:
 - iOS simulator: `EXPO_PUBLIC_API_BASE_URL=http://localhost:3000`
 - Android emulator: `EXPO_PUBLIC_API_BASE_URL=http://10.0.2.2:3000`
 - Physical device: `EXPO_PUBLIC_API_BASE_URL=http://<your-local-ip>:3000`
+
+## Local Run Order
+
+```bash
+pnpm db:up
+pnpm --filter api run prisma:migrate:dev
+pnpm --filter api run prisma:seed
+pnpm --filter api start:dev
+```
+
+In another terminal:
+
+```bash
+cd apps/mobile
+pnpm start -- --clear
+```
 
 ## Workspace scripts
 

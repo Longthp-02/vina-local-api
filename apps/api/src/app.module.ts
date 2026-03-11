@@ -11,6 +11,7 @@ import { AdminModule } from "./admin/admin.module";
 import { AuthContextMiddleware } from "./auth/auth-context.middleware";
 import { AuthModule } from "./auth/auth.module";
 import { DatabaseModule } from "./database/database.module";
+import { ListsModule } from "./lists/lists.module";
 import { VendorsModule } from "./vendors/vendors.module";
 
 @Module({
@@ -22,6 +23,7 @@ import { VendorsModule } from "./vendors/vendors.module";
     DatabaseModule,
     AuthModule,
     VendorsModule,
+    ListsModule,
     AdminModule,
   ],
   controllers: [AppController],

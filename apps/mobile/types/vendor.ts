@@ -1,5 +1,13 @@
 export type VendorStatus = "PENDING" | "APPROVED" | "REJECTED";
 
+export type VendorPhoto = {
+  id: string;
+  url: string;
+  storagePath: string;
+  mimeType: string;
+  createdAt: string;
+};
+
 export type Vendor = {
   id: string;
   name: string;
@@ -18,8 +26,15 @@ export type Vendor = {
   averageRating: number;
   reviewCount: number;
   aiSummary: string | null;
+  photos: VendorPhoto[];
   createdAt: string;
   updatedAt: string;
+};
+
+export type PhotoUploadInput = {
+  uri: string;
+  name?: string | null;
+  mimeType?: string | null;
 };
 
 export type CreateVendorInput = {
@@ -33,6 +48,7 @@ export type CreateVendorInput = {
   priceMax?: number;
   latitude: number;
   longitude: number;
+  photos?: PhotoUploadInput[];
 };
 
 export type ReviewStatus = "PENDING" | "APPROVED" | "REJECTED";
@@ -48,6 +64,7 @@ export type Review = {
   valueScore: number;
   crowdScore: number;
   status: ReviewStatus;
+  photos: VendorPhoto[];
   createdAt: string;
   updatedAt: string;
 };
@@ -55,4 +72,5 @@ export type Review = {
 export type CreateReviewInput = {
   rating: number;
   content: string;
+  photos?: PhotoUploadInput[];
 };

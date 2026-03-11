@@ -2,6 +2,7 @@ import { apiRequest } from "./client";
 import {
   CreateReviewInput,
   CreateVendorInput,
+  PhotoUploadInput,
   Review,
   Vendor,
 } from "../types/vendor";
@@ -35,7 +36,7 @@ export async function getVendorById(id: string): Promise<Vendor> {
 export async function createVendor(input: CreateVendorInput): Promise<Vendor> {
   return apiRequest<Vendor>("/vendors", {
     method: "POST",
-    body: input,
+    body: buildVendorFormData(input),
   });
 }
 
@@ -67,13 +68,58 @@ export async function createVendorReview(
 ): Promise<Review> {
   return apiRequest<Review>(`/vendors/${vendorId}/reviews`, {
     method: "POST",
-    body: {
-      rating: input.rating,
-      content: input.content,
-      cleanlinessScore: input.rating,
-      authenticityScore: input.rating,
-      valueScore: input.rating,
-      crowdScore: input.rating,
-    },
+    body: buildReviewFormData(input),
+  });
+}
+
+function buildVendorFormData(input: CreateVendorInput): FormData {
+  const formData = new FormData();
+
+  formData.append("name", input.name);
+
+  if (input.description) {
+    formData.append("description", input.description);
+  }
+
+  formData.append("addressText", input.addressText);
+  formData.append("district", input.district);
+  formData.append("city", input.city);
+  formData.append("category", input.category);
+  formData.append("latitude", String(input.latitude));
+  formData.append("longitude", String(input.longitude));
+
+  if (input.priceMin !== undefined) {
+    formData.append("priceMin", String(input.priceMin));
+  }
+
+  if (input.priceMax !== undefined) {
+    formData.append("priceMax", String(input.priceMax));
+  }
+
+  appendPhotos(formData, input.photos);
+  return formData;
+}
+
+function buildReviewFormData(input: CreateReviewInput): FormData {
+  const formData = new FormData();
+
+  formData.append("rating", String(input.rating));
+  formData.append("content", input.content);
+  formData.append("cleanlinessScore", String(input.rating));
+  formData.append("authenticityScore", String(input.rating));
+  formData.append("valueScore", String(input.rating));
+  formData.append("crowdScore", String(input.rating));
+
+  appendPhotos(formData, input.photos);
+  return formData;
+}
+
+function appendPhotos(formData: FormData, photos?: PhotoUploadInput[]) {
+  photos?.forEach((photo, index) => {
+    formData.append("photos", {
+      uri: photo.uri,
+      name: photo.name ?? `photo-${index + 1}.jpg`,
+      type: photo.mimeType ?? "image/jpeg",
+    } as never);
   });
 }

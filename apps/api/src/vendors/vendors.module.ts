@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { UploadsService } from "../uploads/uploads.service";
 import { VendorsController } from "./vendors.controller";
 import { PlaceholderVendorSummaryProvider } from "./summary/placeholder-vendor-summary.provider";
 import { VENDOR_SUMMARY_PROVIDER } from "./summary/vendor-summary.provider";
@@ -9,6 +10,7 @@ import { VendorsService } from "./vendors.service";
   controllers: [VendorsController],
   providers: [
     VendorsService,
+    UploadsService,
     VendorSummaryService,
     {
       provide: VENDOR_SUMMARY_PROVIDER,

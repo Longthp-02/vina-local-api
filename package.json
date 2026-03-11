@@ -3,6 +3,9 @@
   "private": true,
   "packageManager": "pnpm@10.17.1",
   "scripts": {
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "db:logs": "docker compose logs -f postgres",
     "dev": "pnpm -r --parallel --filter mobile --filter api run dev",
     "dev:mobile": "pnpm --filter mobile start",
     "dev:api": "pnpm --filter api start:dev",

@@ -2,9 +2,11 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from "@nestjs/common";
 import { Prisma, ReviewStatus, VendorStatus } from "@prisma/client";
 import { PrismaService } from "../database/prisma.service";
+import { UploadedImageFile, UploadsService } from "../uploads/uploads.service";
 import { CreateReviewDto } from "./dto/create-review.dto";
 import { CreateVendorDto } from "./dto/create-vendor.dto";
 import { GetNearbyVendorsQueryDto } from "./dto/get-nearby-vendors-query.dto";
@@ -13,9 +15,20 @@ import { GetVendorsQueryDto } from "./dto/get-vendors-query.dto";
 
 @Injectable()
 export class VendorsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly uploadsService: UploadsService,
+  ) {}
 
-  async create(input: CreateVendorDto, authUserId?: string) {
+  async create(
+    input: CreateVendorDto,
+    authUserId?: string,
+    files: UploadedImageFile[] = [],
+  ) {
+    if (!authUserId) {
+      throw new UnauthorizedException("Authentication required");
+    }
+
     if (
       input.priceMin !== undefined &&
       input.priceMax !== undefined &&
@@ -27,6 +40,10 @@ export class VendorsService {
     }
 
     const slug = await this.buildUniqueSlug(input.name);
+    const photos = await this.uploadsService.saveImages(
+      files,
+      `vendors/${slug}`,
+    );
 
     return this.prisma.vendor.create({
       data: {
@@ -43,7 +60,19 @@ export class VendorsService {
         priceMax: input.priceMax ?? null,
         openHoursJson: input.openHoursJson as Prisma.InputJsonValue | undefined,
         status: VendorStatus.PENDING,
-        submittedByUserId: authUserId ?? null,
+        submittedByUserId: authUserId,
+        photos: {
+          create: photos.map((photo) => ({
+            url: photo.url,
+            storagePath: photo.storagePath,
+            mimeType: photo.mimeType,
+          })),
+        },
+      },
+      include: {
+        photos: {
+          orderBy: { createdAt: "asc" },
+        },
       },
     });
   }
@@ -53,6 +82,11 @@ export class VendorsService {
       skip: query.offset,
       take: query.limit,
       orderBy: { createdAt: "desc" },
+      include: {
+        photos: {
+          orderBy: { createdAt: "asc" },
+        },
+      },
     });
   }
 
@@ -75,6 +109,11 @@ export class VendorsService {
           lte: longitude + longitudeDelta,
         },
       },
+      include: {
+        photos: {
+          orderBy: { createdAt: "asc" },
+        },
+      },
     });
 
     return candidates
@@ -95,6 +134,11 @@ export class VendorsService {
   async findOne(id: string) {
     const vendor = await this.prisma.vendor.findUnique({
       where: { id },
+      include: {
+        photos: {
+          orderBy: { createdAt: "asc" },
+        },
+      },
     });
 
     if (!vendor) {
@@ -122,6 +166,11 @@ export class VendorsService {
       },
       skip: query.offset,
       take: query.limit,
+      include: {
+        photos: {
+          orderBy: { createdAt: "asc" },
+        },
+      },
     });
   }
 
@@ -129,13 +178,22 @@ export class VendorsService {
     vendorId: string,
     input: CreateReviewDto,
     authUserId?: string,
+    files: UploadedImageFile[] = [],
   ) {
+    if (!authUserId) {
+      throw new UnauthorizedException("Authentication required");
+    }
+
     await this.ensureVendorExists(vendorId);
+    const photos = await this.uploadsService.saveImages(
+      files,
+      `reviews/${vendorId}`,
+    );
 
     return this.prisma.$transaction(async (tx) => {
       const review = await tx.review.create({
         data: {
-          userId: authUserId ?? input.userId ?? null,
+          userId: authUserId,
           vendorId,
           rating: input.rating,
           content: input.content,
@@ -144,6 +202,18 @@ export class VendorsService {
           valueScore: input.valueScore,
           crowdScore: input.crowdScore,
           status: ReviewStatus.PENDING,
+          photos: {
+            create: photos.map((photo) => ({
+              url: photo.url,
+              storagePath: photo.storagePath,
+              mimeType: photo.mimeType,
+            })),
+          },
+        },
+        include: {
+          photos: {
+            orderBy: { createdAt: "asc" },
+          },
         },
       });
 

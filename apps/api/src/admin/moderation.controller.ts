@@ -32,4 +32,54 @@ export class ModerationController {
   listFlaggedReviews() {
     return this.moderationService.listFlaggedReviews();
   }
+
+  @Get("list-comments/reported")
+  listReportedListComments() {
+    return this.moderationService.listReportedListComments();
+  }
+
+  @Get("lists/reported")
+  listReportedLists() {
+    return this.moderationService.listReportedLists();
+  }
+
+  @Get("lists/hidden")
+  listHiddenLists() {
+    return this.moderationService.listHiddenLists();
+  }
+
+  @Get("list-comments/hidden")
+  listHiddenListComments() {
+    return this.moderationService.listHiddenListComments();
+  }
+
+  @Post("lists/:id/hide")
+  hideList(@Param() params: IdParamDto) {
+    return this.moderationService.hideList(params.id);
+  }
+
+  @Post("lists/:id/restore")
+  restoreList(@Param() params: IdParamDto) {
+    return this.moderationService.restoreList(params.id);
+  }
+
+  @Post("lists/:id/clear-reports")
+  clearListReports(@Param() params: IdParamDto) {
+    return this.moderationService.clearListReports(params.id);
+  }
+
+  @Post("list-comments/:id/hide")
+  hideListComment(@Param() params: IdParamDto) {
+    return this.moderationService.hideListComment(params.id);
+  }
+
+  @Post("list-comments/:id/restore")
+  restoreListComment(@Param() params: IdParamDto) {
+    return this.moderationService.restoreListComment(params.id);
+  }
+
+  @Post("list-comments/:id/clear-reports")
+  clearListCommentReports(@Param() params: IdParamDto) {
+    return this.moderationService.clearListCommentReports(params.id);
+  }
 }

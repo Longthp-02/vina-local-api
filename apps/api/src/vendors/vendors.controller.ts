@@ -1,5 +1,17 @@
-import { Body, Controller, Get, Param, Post, Query, Req } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  Req,
+  UploadedFiles,
+  UseInterceptors,
+} from "@nestjs/common";
+import { FileFieldsInterceptor } from "@nestjs/platform-express";
 import type { AuthenticatedRequest } from "../auth/auth.types";
+import { UploadedImageFile } from "../uploads/uploads.service";
 import { CreateReviewDto } from "./dto/create-review.dto";
 import { CreateVendorDto } from "./dto/create-vendor.dto";
 import { GetNearbyVendorsQueryDto } from "./dto/get-nearby-vendors-query.dto";
@@ -17,8 +29,17 @@ export class VendorsController {
   ) {}
 
   @Post()
-  create(@Body() body: CreateVendorDto, @Req() req: AuthenticatedRequest) {
-    return this.vendorsService.create(body, req.authUserId);
+  @UseInterceptors(FileFieldsInterceptor([{ name: "photos", maxCount: 3 }]))
+  create(
+    @Body() body: CreateVendorDto,
+    @Req() req: AuthenticatedRequest,
+    @UploadedFiles() files: { photos?: UploadedImageFile[] },
+  ) {
+    return this.vendorsService.create(
+      body,
+      req.authUserId,
+      files?.photos ?? [],
+    );
   }
 
   @Get()
@@ -45,12 +66,19 @@ export class VendorsController {
   }
 
   @Post(":id/reviews")
+  @UseInterceptors(FileFieldsInterceptor([{ name: "photos", maxCount: 3 }]))
   createReview(
     @Param() params: VendorIdParamDto,
     @Body() body: CreateReviewDto,
     @Req() req: AuthenticatedRequest,
+    @UploadedFiles() files: { photos?: UploadedImageFile[] },
   ) {
-    return this.vendorsService.createReview(params.id, body, req.authUserId);
+    return this.vendorsService.createReview(
+      params.id,
+      body,
+      req.authUserId,
+      files?.photos ?? [],
+    );
   }
 
   @Post(":id/summary/regenerate")

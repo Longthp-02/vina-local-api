@@ -26,11 +26,23 @@ Moderation helper commands:
   reject-vendor <vendorId>
   pending-reviews
   flagged-reviews
+  reported-lists
+  hidden-lists
+  hide-list <listId>
+  restore-list <listId>
+  clear-list-reports <listId>
+  reported-list-comments
+  hidden-list-comments
+  hide-list-comment <commentId>
+  restore-list-comment <commentId>
+  clear-list-comment-reports <commentId>
 
 Examples:
   pnpm --filter api run moderation -- pending-vendors
   pnpm --filter api run moderation -- approve-vendor <vendorId>
   ADMIN_API_KEY=dev-admin-key pnpm --filter api run moderation -- pending-reviews
+  pnpm --filter api run moderation -- reported-lists
+  pnpm --filter api run moderation -- reported-list-comments
 USAGE
 }
 
@@ -55,6 +67,48 @@ case "$cmd" in
     ;;
   flagged-reviews)
     curl_json GET "/admin/moderation/reviews/flagged"
+    ;;
+  reported-lists)
+    curl_json GET "/admin/moderation/lists/reported"
+    ;;
+  hidden-lists)
+    curl_json GET "/admin/moderation/lists/hidden"
+    ;;
+  hide-list)
+    list_id="${2:-}"
+    [ -n "$list_id" ] || { echo "Missing listId"; usage; exit 1; }
+    curl_json POST "/admin/moderation/lists/$list_id/hide"
+    ;;
+  restore-list)
+    list_id="${2:-}"
+    [ -n "$list_id" ] || { echo "Missing listId"; usage; exit 1; }
+    curl_json POST "/admin/moderation/lists/$list_id/restore"
+    ;;
+  clear-list-reports)
+    list_id="${2:-}"
+    [ -n "$list_id" ] || { echo "Missing listId"; usage; exit 1; }
+    curl_json POST "/admin/moderation/lists/$list_id/clear-reports"
+    ;;
+  reported-list-comments)
+    curl_json GET "/admin/moderation/list-comments/reported"
+    ;;
+  hidden-list-comments)
+    curl_json GET "/admin/moderation/list-comments/hidden"
+    ;;
+  hide-list-comment)
+    comment_id="${2:-}"
+    [ -n "$comment_id" ] || { echo "Missing commentId"; usage; exit 1; }
+    curl_json POST "/admin/moderation/list-comments/$comment_id/hide"
+    ;;
+  restore-list-comment)
+    comment_id="${2:-}"
+    [ -n "$comment_id" ] || { echo "Missing commentId"; usage; exit 1; }
+    curl_json POST "/admin/moderation/list-comments/$comment_id/restore"
+    ;;
+  clear-list-comment-reports)
+    comment_id="${2:-}"
+    [ -n "$comment_id" ] || { echo "Missing commentId"; usage; exit 1; }
+    curl_json POST "/admin/moderation/list-comments/$comment_id/clear-reports"
     ;;
   *)
     usage
